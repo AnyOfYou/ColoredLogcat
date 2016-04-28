@@ -130,7 +130,7 @@ LOG_TYPE_THREADTIME = 2
 LOG_TYPE = LOG_TYPE_UNKNOWN
 
 retag = re.compile("^([A-Z])/([^\(]+)\(([^\)]+)\): (.*)$")
-retag_threadtime = re.compile("^(.*\ .*)\s+(\d+)\s+(\d+)\s+([A-Z])\s+(.+): (.*)$")
+retag_threadtime = re.compile("^(.*\ .*)\s+(\d+)\s+(\d+)\s+([A-Z])\s+([^:]+|.+): (.*)$")
 
 # to pick up -d or -e
 adb_args = ' '.join(sys.argv[1:])
@@ -150,6 +150,7 @@ while True:
     result = regex_match(line)
     if result[0] != LOG_TYPE_UNKNOWN:
         tagtype, tag, owner, message, time = result[1:]
+        # print line
         # print tagtype
         # print tag
         # print owner
