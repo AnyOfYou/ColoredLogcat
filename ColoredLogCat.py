@@ -129,7 +129,8 @@ LOG_TYPE_THREADTIME = 2
 
 LOG_TYPE = LOG_TYPE_UNKNOWN
 
-retag = re.compile("^([A-Z])/([^\(]+)\(([^\)]+)\): (.*)$")
+# retag = re.compile("^([A-Z])/([^\(]+)\(([^\)]+)\): (.*)$")
+retag = re.compile("^([A-Z])/(.+)\(([^\)]+)\): (.*)$")
 retag_threadtime = re.compile("^(.*\ .*)\s+(\d+)\s+(\d+)\s+([A-Z])\s+([^:]+|.+): (.*)$")
 
 # to pick up -d or -e
