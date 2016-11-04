@@ -190,5 +190,6 @@ while True:
         linebuf.write(message)
         line = linebuf.getvalue()
 
-    print line
+    # print line
+    sys.stdout.write(line)
     if len(line) == 0: break
