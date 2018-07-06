@@ -26,9 +26,10 @@
 import os, sys, re, StringIO
 import fcntl, termios, struct
 
-# unpack the current terminal width/height
-data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, '1234')
-HEIGHT, WIDTH = struct.unpack('hh',data)
+if os.isatty(sys.stdout.fileno()):
+    # unpack the current terminal width/height
+    data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, '1234')
+    HEIGHT, WIDTH = struct.unpack('hh',data)
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
@@ -149,7 +150,7 @@ while True:
         break
 
     result = regex_match(line)
-    if result[0] != LOG_TYPE_UNKNOWN:
+    if result[0] != LOG_TYPE_UNKNOWN and os.isatty(sys.stdout.fileno()):
         tagtype, tag, owner, message, time = result[1:]
         # print line
         # print tagtype
