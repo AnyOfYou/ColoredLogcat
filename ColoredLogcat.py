@@ -1,40 +1,19 @@
-#!/usr/bin/python
-
-# http://jsharkey.org/blog/2009/04/22/modifying-the-android-logcat-stream-for-full-color-debugging/
-
-'''
-    Copyright 2009, The Android Open Source Project
-
-    Licensed under the Apache License, Version 2.0 (the "License"); 
-    you may not use this file except in compliance with the License. 
-    You may obtain a copy of the License at 
-
-        http://www.apache.org/licenses/LICENSE-2.0 
-
-    Unless required by applicable law or agreed to in writing, software 
-    distributed under the License is distributed on an "AS IS" BASIS, 
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-    See the License for the specific language governing permissions and 
-    limitations under the License.
-'''
-
-# script to highlight adb logcat output for console
-# written by jeff sharkey, http://jsharkey.org/
-# piping detection and popen() added by other android team members
-
-
-import os, sys, re, StringIO
+import os, sys, re
 import fcntl, termios, struct
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 if os.isatty(sys.stdout.fileno()):
-    # unpack the current terminal width/height
+    # Unpack the current terminal width/height
     data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, '1234')
     HEIGHT, WIDTH = struct.unpack('hh',data)
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
 def format(fg=None, bg=None, bright=False, bold=False, dim=False, reset=False):
-    # manually derived from http://en.wikipedia.org/wiki/ANSI_escape_code#Codes
+    # Manually derived from http://en.wikipedia.org/wiki/ANSI_escape_code#Codes
     codes = []
     if reset: codes.append("0")
     else:
@@ -50,7 +29,7 @@ def format(fg=None, bg=None, bright=False, bold=False, dim=False, reset=False):
 
 def indent_wrap(message, indent=0, width=80):
     wrap_area = width - indent
-    messagebuf = StringIO.StringIO()
+    messagebuf = StringIO()
     current = 0
     while current < len(message):
         next = min(current + wrap_area, len(message))
@@ -70,8 +49,8 @@ KNOWN_TAGS = {
 }
 
 def allocate_color(tag):
-    # this will allocate a unique format for the given tag
-    # since we dont have very many colors, we always keep track of the LRU
+    # This will allocate a unique format for the given tag
+    # Since we dont have very many colors, we always keep track of the LRU
     if not tag in KNOWN_TAGS:
         KNOWN_TAGS[tag] = LAST_USED[0]
     color = KNOWN_TAGS[tag]
@@ -111,7 +90,7 @@ RULES = {
 
 TIME_WIDTH = 20
 TAGTYPE_WIDTH = 3
-TAG_WIDTH = 25
+TAG_WIDTH = 20
 PROCESS_WIDTH = 8 # 8 or -1
 HEADER_SIZE = TAGTYPE_WIDTH + 1 + TAG_WIDTH + 1 + PROCESS_WIDTH + 1
 HEADER_SIZE_THREADTIME = TAGTYPE_WIDTH + 1 + TAG_WIDTH + 1 + PROCESS_WIDTH + 1 + TIME_WIDTH + 1
@@ -134,10 +113,10 @@ LOG_TYPE = LOG_TYPE_UNKNOWN
 retag = re.compile("^([A-Z])/(.+)\(([^\)]+)\): (.*)$")
 retag_threadtime = re.compile("^(.*\ .*)\s+(\d+)\s+(\d+)\s+([A-Z])\s+([^:]+|.+): (.*)$")
 
-# to pick up -d or -e
+# To pick up -d or -e
 adb_args = ' '.join(sys.argv[1:])
 
-# if someone is piping in to us, use stdin as input.  if not, invoke adb logcat
+# If someone is piping in to us, use stdin as input.  if not, invoke adb logcat
 if os.isatty(sys.stdin.fileno()):
     input = os.popen("adb %s logcat" % adb_args)
 else:
@@ -152,45 +131,45 @@ while True:
     result = regex_match(line)
     if result[0] != LOG_TYPE_UNKNOWN and os.isatty(sys.stdout.fileno()):
         tagtype, tag, owner, message, time = result[1:]
-        # print line
-        # print tagtype
-        # print tag
-        # print owner
-        # print message
-        linebuf = StringIO.StringIO()
+        # print(line)
+        # print(tagtype)
+        # print(tag)
+        # print(owner)
+        # print(message)
+        linebuf = StringIO()
 
         if len(time) >0:
             time = time.strip().ljust(TIME_WIDTH)
             linebuf.write("%s%s%s" % (format(fg=CYAN, bright=True), time, format(reset=True)))
-        # center process info
+        # Center process info
         if PROCESS_WIDTH > 0:
             owner = owner.strip().center(PROCESS_WIDTH)
             # owner = owner.strip().ljust(5)
             linebuf.write("%s%s%s " % (format(fg=BLACK, bg=BLACK, bright=True), owner, format(reset=True)))
 
-        # right-align tag title and allocate color if needed
+        # Right-align tag title and allocate color if needed
         tag = tag.strip()
         color = allocate_color(tag)
         tag = tag[-TAG_WIDTH:].ljust(TAG_WIDTH)
         linebuf.write("%s%s %s" % (format(fg=color, dim=False), tag, format(reset=True)))
 
-        # write out tagtype colored edge
+        # Write out tagtype colored edge
         if not tagtype in TAGTYPES: break
         linebuf.write(TAGTYPES[tagtype])
 
-        # insert line wrapping as needed
+        # Insert line wrapping as needed
         if result[0] == LOG_TYPE_BRIEF:
             message = indent_wrap(message, HEADER_SIZE, WIDTH)
         else:
             message = indent_wrap(message, HEADER_SIZE_THREADTIME, WIDTH)
-        # format tag message using rules
+        # Format tag message using rules
         for matcher in RULES:
             replace = RULES[matcher]
             message = matcher.sub(replace, message)
 
         linebuf.write(message)
         line = linebuf.getvalue()
-        print line
+        print(line)
     else:
         sys.stdout.write(line)
     if len(line) == 0: break
